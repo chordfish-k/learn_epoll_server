@@ -2,11 +2,15 @@
 #include "EventLoop.h"
 #include "Socket.h"
 
+#include <unistd.h>
+
 Connection::Connection(EventLoop* loop, Socket* clientSocket) 
   : m_Loop(loop), m_ClientSocket(clientSocket) {
   // 为新客户端连接准备读事件，并添加到epoll
   m_ClientChannel = new Channel(m_Loop, m_ClientSocket->GetFd());
   m_ClientChannel->SetReadCallback(std::bind(&Channel::OnMessage, m_ClientChannel));
+  m_ClientChannel->SetCloseCallback(std::bind(&Connection::OnClose, this));
+  m_ClientChannel->SetErrorCallback(std::bind(&Connection::OnError, this));
   m_ClientChannel->UseET();         // 使用边缘触发
   m_ClientChannel->EnableReading(); // 将Channel添加到Epoll
 }
@@ -26,4 +30,14 @@ std::string Connection::GetIp() const {
 
 uint16_t Connection::GetPort() const {
   return m_ClientSocket->GetPort();
+}
+
+void Connection::OnClose() {
+  printf("Client(fd=%d) Disconnected.\n", GetFd());
+  close(GetFd());
+}
+
+void Connection::OnError() {
+  printf("Client(fd=%d) Error.\n", GetFd());
+  close(GetFd());
 }

@@ -1,11 +1,13 @@
 #include "Channel.h"
 
 #include "EventLoop.h"
-#include "Connection.h"
 
+#include <cerrno>
+#include <stdio.h>
 #include <functional>
 #include <string.h>
 #include <strings.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 Channel::Channel(EventLoop* loop, int fd) 
@@ -52,9 +54,9 @@ uint32_t Channel::GetREvents() const {
 
 void Channel::HandleEvent() {
   if (m_REvents & EPOLLRDHUP) {
-    // 对方已关闭。部分系统检测不到该事件，可使用EPOLLIN, recv()返回0
-    printf("Client(fd=%d) Disconnected.\n", m_Fd);
-    close(m_Fd);
+    // 调用关闭回调函数
+    if (m_CloseCallback)
+      m_CloseCallback();  
   }
   else if (m_REvents & (EPOLLIN | EPOLLPRI)) {
     // 处理读事件
@@ -65,9 +67,9 @@ void Channel::HandleEvent() {
     // 有数据需要写。。
   }
   else {
-    // 其他事件，都视为错误
-    printf("Client(fd=%d) Error.\n", m_Fd);
-    close(m_Fd);
+    // 调用关闭回调函数
+    if (m_ErrorCallback)
+      m_ErrorCallback();   
   }
 }
 
@@ -93,8 +95,9 @@ void Channel::OnMessage() {
       break;
     }
     else if (nread == 0) {
-      printf("Client(fd=%d) Disconnected.\n", m_Fd);
-      close(m_Fd);
+      // 调用关闭回调函数
+      if (m_CloseCallback)
+        m_CloseCallback();
       break;
     }
   }
@@ -102,4 +105,12 @@ void Channel::OnMessage() {
 
 void Channel::SetReadCallback(std::function<void()> fn) {
   m_ReadCallback = fn;
+}
+
+void Channel::SetCloseCallback(std::function<void()> fn) {
+  m_CloseCallback = fn;
+}
+
+void Channel::SetErrorCallback(std::function<void()> fn) {
+  m_ErrorCallback = fn;
 }

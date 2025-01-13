@@ -18,4 +18,7 @@ public:
   int GetFd() const;
   std::string GetIp() const;
   uint16_t GetPort() const;
+
+  void OnClose();   // Tcp连接关闭的回调，供Channel回调
+  void OnError();   // Tcp连接错误的回调, 供Channel回调
 };
