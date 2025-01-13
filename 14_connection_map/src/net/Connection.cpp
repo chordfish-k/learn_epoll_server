@@ -33,11 +33,20 @@ uint16_t Connection::GetPort() const {
 }
 
 void Connection::OnClose() {
-  printf("Client(fd=%d) Disconnected.\n", GetFd());
-  close(GetFd());
+  if (m_CloseCallback)
+    m_CloseCallback(this);
 }
 
 void Connection::OnError() {
-  printf("Client(fd=%d) Error.\n", GetFd());
-  close(GetFd());
+  if (m_ErrorCallback)
+    m_ErrorCallback(this);
 }
+
+void Connection::SetCloseCallback(std::function<void(Connection*)> fn) {
+  m_CloseCallback = fn; 
+}
+
+void Connection::SetErrorCallback(std::function<void(Connection*)> fn) {
+  m_ErrorCallback = fn;
+}
+

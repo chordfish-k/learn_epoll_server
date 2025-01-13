@@ -19,5 +19,7 @@ public:
 
   void Start();      // 开启事件循环
   
-  void OnNewConnection(Socket* clientSocket);  // 处理新的连接请求
+  void OnNewConnection(Socket* clientSocket);   // 处理新的连接请求，在Acceptor类中回调该函数
+  void OnCloseConnection(Connection* conn);     // 关闭客户端的连接，在Connection中回调该函数
+  void OnErrorConnection(Connection* conn);     // 客户端的连接错误，在Connection中回调该函数
 };
