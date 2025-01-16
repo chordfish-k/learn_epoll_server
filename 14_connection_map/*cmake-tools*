@@ -1,5 +1,0 @@
-
-[EXECUTE]: cmake -B /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map/out/Debug -S . -D CMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 <ENV>  {CWD} /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map
-[EXECUTE]: cmake --build /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map/out/Debug --target all <ENV>  {CWD} /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map
-[EXECUTE]: cmake --build /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map/out/Debug --target all <ENV>  {CWD} /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map
-[EXECUTE]: cmake --build /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map/out/Debug --target all <ENV>  {CWD} /mnt/e/Linux/wsl_ubuntu/ubuntu/files/cpp/test_epoll/14_connection_map
