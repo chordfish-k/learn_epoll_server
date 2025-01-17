@@ -20,5 +20,5 @@ public:
 
   void OnNewConnection();  // 处理新客户端连接请求
   
-  void SetOnNewConnectionCallback(std::function<void(Socket*)> fn);
+  void SetNewConnectionCallback(std::function<void(Socket*)> fn);
 };

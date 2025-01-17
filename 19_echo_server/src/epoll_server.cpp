@@ -1,4 +1,4 @@
-#include "net/TcpServer.h"
+#include "net/EchoServer.h"
 
 int main(int argc, const char** argv) {
   
@@ -8,9 +8,11 @@ int main(int argc, const char** argv) {
     return -1;
   }
 
-  TcpServer tcpServer(argv[1], atoi(argv[2]));
-
-  tcpServer.Start();
-
+  //TcpServer tcpServer(argv[1], atoi(argv[2]));
+  //tcpServer.Start();
+  
+  EchoServer echoServer(argv[1], atoi(argv[2]));
+  echoServer.Start();
+  
   return 0;
 }

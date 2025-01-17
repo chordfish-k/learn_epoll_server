@@ -34,6 +34,6 @@ void Acceptor::OnNewConnection() {
   m_NewConnectionCallback(clientSocket);
 }
 
-void Acceptor::SetOnNewConnectionCallback(std::function<void(Socket*)> fn) {
+void Acceptor::SetNewConnectionCallback(std::function<void(Socket*)> fn) {
   m_NewConnectionCallback = fn;
 }
