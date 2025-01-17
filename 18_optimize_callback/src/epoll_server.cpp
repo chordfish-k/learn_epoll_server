@@ -1,0 +1,16 @@
+#include "net/TcpServer.h"
+
+int main(int argc, const char** argv) {
+  
+  if (argc != 3) {
+    printf("Usage: ./EpollServer <ip> <port>\n");
+    printf("Example: ./EpollServer 127.0.0.1 5005\n\n");
+    return -1;
+  }
+
+  TcpServer tcpServer(argv[1], atoi(argv[2]));
+
+  tcpServer.Start();
+
+  return 0;
+}
