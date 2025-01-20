@@ -3,8 +3,8 @@
 #include <functional>
 #include <iostream>
 
-EchoServer::EchoServer(const std::string& ip, const uint16_t port) 
-  : m_TcpServer(ip, port) {
+EchoServer::EchoServer(const std::string& ip, const uint16_t port, int threadNum) 
+  : m_TcpServer(ip, port, threadNum) {
     m_TcpServer.SetNewConnectionCallback(std::bind(&EchoServer::OnNewConnection, this, std::placeholders::_1));
     m_TcpServer.SetCloseConnectionCallback(std::bind(&EchoServer::OnCloseConnection, this, std::placeholders::_1));
     m_TcpServer.SetErrorConnectionCallback(std::bind(&EchoServer::OnErrorConnection, this, std::placeholders::_1));
@@ -26,7 +26,7 @@ void EchoServer::OnNewConnection(Connection* clientSocket) {
 }
 
 void EchoServer::OnCloseConnection(Connection* conn) {
-  std::cout << "EchoServer conn error.\n";
+  std::cout << "EchoServer conn close.\n";
 }
 
 void EchoServer::OnErrorConnection(Connection* conn) {
@@ -36,12 +36,6 @@ void EchoServer::OnErrorConnection(Connection* conn) {
 void EchoServer::OnMessage(Connection* conn, std::string& message) {
   // 假设经过若干处理，得到结果
   message = "Reply: " + message;
-  
-  // 该部分处理已添加在Buffer类中
-  // // 处理响应报文
-  // int len = message.size();
-  // std::string tmpBuf((char*)&len, 4); // 把报文头部填充到报文
-  // tmpBuf.append(message);
 
   //send(conn->GetFd(), tmpBuf.data(), tmpBuf.size(), 0);
   conn->Send(message.data(), message.size());

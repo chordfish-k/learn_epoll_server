@@ -67,28 +67,3 @@ void ThreadPool::AddTask(std::function<void()> task) {
   //唤醒一个线程
   m_CondVar.notify_one();
 }
-
-/*
-void show(int no) {
-  printf("no is %d\n", no);
-}
-
-void test() {
-  printf("hello!\n");
-}
-
-// TEST
-int main() {
-  ThreadPool threadPool(3);
-
-  threadPool.AddTask(std::bind(show, 8));
-  sleep(1);
-
-  threadPool.AddTask(std::bind(test));
-  sleep(1);
-  
-  threadPool.AddTask(std::bind([]{printf("SB\n");}));
-  sleep(1);
-  return 0;
-}
-*/

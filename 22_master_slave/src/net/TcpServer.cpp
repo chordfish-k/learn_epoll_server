@@ -1,36 +1,62 @@
 #include "TcpServer.h"
 
 #include "Connection.h"
+#include "EventLoop.h"
 
 #include <cstdio>
 #include <functional>
 #include <unistd.h>
 
-TcpServer::TcpServer(const std::string& ip, const uint16_t port) {
-  m_Acceptor = new Acceptor(&m_Loop, ip, port);
+TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum) 
+  : m_ThreadNum(threadNum) {
+  // 创建主事件循环
+  m_MainLoop = new EventLoop();
+  m_MainLoop->SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
+  
+  m_Acceptor = new Acceptor(m_MainLoop, ip, port);
   m_Acceptor->SetNewConnectionCallback(std::bind(&TcpServer::OnNewConnection, this, std::placeholders::_1));
-  m_Loop.SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
+
+  // 创建线程池
+  m_ThreadPool = new ThreadPool(m_ThreadNum);
+  // 创建从事件循环
+  for (int i = 0; i < m_ThreadNum; i++) {
+    m_SubLoops.push_back(new EventLoop);
+    // 超时回调
+    m_SubLoops[i]->SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
+    // 绑定线程池要执行的任务为事件循环的Run()
+    m_ThreadPool->AddTask(std::bind(&EventLoop::Run, m_SubLoops[i]));
+  }
 }
 
 TcpServer::~TcpServer() {
+  delete m_Acceptor;
+  delete m_MainLoop;
+
   // 释放全部Fd
   for (auto &connPair : m_Conns) {
     delete connPair.second;
   }
+
+  // 释放从事件循环
+  for (auto& subLoop: m_SubLoops)
+    delete subLoop;
+
+  // 释放线程池
+  delete m_ThreadPool;
 }
 
 void TcpServer::Start() {
-  m_Loop.Run();
+  m_MainLoop->Run();
 }
 
 void TcpServer::OnNewConnection(Socket* clientSocket) {
-  Connection* conn = new Connection(&m_Loop, clientSocket); // 还没释放conn
+  // Connection* conn = new Connection(m_MainLoop, clientSocket); // 还没释放conn
+  const int idx = clientSocket->GetFd() % m_ThreadNum; // 随机选取一个从事件循环
+  Connection* conn = new Connection( m_SubLoops[idx], clientSocket); // 还没释放conn
   conn->SetCloseCallback(std::bind(&TcpServer::OnCloseConnection, this, std::placeholders::_1));
   conn->SetErrorCallback(std::bind(&TcpServer::OnErrorConnection, this, std::placeholders::_1));
   conn->SetMessageCallback(std::bind(&TcpServer::OnMessage, this, std::placeholders::_1, std::placeholders::_2));
   conn->SetSendCompleteCallback(std::bind(&TcpServer::OnSendComplete, this, std::placeholders::_1));
-
-  // printf("Accept Client(fd=%d, ip=%s, port=%d) OK.\n", conn->GetFd(), conn->GetIp().c_str(), conn->GetPort());
 
   m_Conns[conn->GetFd()] = conn;
 
@@ -44,7 +70,6 @@ void TcpServer::OnCloseConnection(Connection* conn) {
   if (m_CloseConnectionCallback)
     m_CloseConnectionCallback(conn);
 
-  // printf("Client(fd=%d) Disconnected.\n", conn->GetFd());
   // close(conn->GetFd()); // 在conn的析构函数->socket的析构函数中，会关闭fd
   m_Conns.erase(conn->GetFd());
   delete conn;
@@ -54,7 +79,6 @@ void TcpServer::OnErrorConnection(Connection* conn) {
   if (m_ErrorConnectionCallback)
     m_ErrorConnectionCallback(conn);
 
-  // printf("Client(fd=%d) Error.\n", conn->GetFd());
   // close(conn->GetFd());
   m_Conns.erase(conn->GetFd());
   delete conn;
@@ -62,31 +86,17 @@ void TcpServer::OnErrorConnection(Connection* conn) {
 }
 
 void TcpServer::OnMessage(Connection* conn, std::string& message) {
-  // // 假设经过若干处理，得到结果
-  // message = "Reply: " + message;
-  
-  // // 处理响应报文
-  // int len = message.size();
-  // std::string tmpBuf((char*)&len, 4); // 把报文头部填充到报文
-  // tmpBuf.append(message);
-
-  // //send(conn->GetFd(), tmpBuf.data(), tmpBuf.size(), 0);
-  // conn->Send(tmpBuf.data(), tmpBuf.size());
-
+  // 假设经过若干处理，得到结果
   if (m_MessageCallback)
     m_MessageCallback(conn, message);
 }
 
 void TcpServer::OnSendComplete(Connection* conn) {
-  // printf("Send Complete.\n");
-
   if (m_SendCompleteCallback)
     m_SendCompleteCallback(conn);
 }
-
+ 
 void TcpServer::OnEpollTimeout(EventLoop* loop) {
-  // printf("Timeout: epoll_wait().\n");
-
   if (m_EpollTimeoutCallback)
     m_EpollTimeoutCallback(loop);
 }

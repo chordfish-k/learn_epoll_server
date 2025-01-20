@@ -4,24 +4,31 @@
 #include "EventLoop.h"
 #include "Channel.h"
 #include "Acceptor.h"
+#include "ThreadPool.h"
 
 #include <functional>
 #include <map>
+#include <vector>
 
 class TcpServer
 {
 private:
-  EventLoop m_Loop;     // 一个TcpServer可以有多个事件循环，单线程暂时只用一个事件循环
-  Acceptor* m_Acceptor; // 一个TcpServer只有一个Acceptor对象
+  EventLoop* m_MainLoop;              // 一个TcpServer只有一个主事件循环
+  std::vector<EventLoop*> m_SubLoops; // 一个TcpServer可以有多个从事件循环
+  Acceptor* m_Acceptor;               // 一个TcpServer只有一个Acceptor对象
+  ThreadPool* m_ThreadPool;           // 线程池
+  int m_ThreadNum;                    // 线程池的大小，即从事件循环的个数
+
   std::map<int, Connection*> m_Conns; // 一个TcpServer有多个Connection对象，存放在map容器中
+  
   std::function<void(Connection*)> m_NewConnectionCallback;         // 回调 EchoServer 中对应函数
   std::function<void(Connection*)> m_CloseConnectionCallback;       // 回调 EchoServer 中对应函数
   std::function<void(Connection*)> m_ErrorConnectionCallback;       // 回调 EchoServer 中对应函数
-  std::function<void(Connection*, std::string&)> m_MessageCallback;  // 回调 EchoServer 中对应函数
+  std::function<void(Connection*, std::string&)> m_MessageCallback; // 回调 EchoServer 中对应函数
   std::function<void(Connection*)> m_SendCompleteCallback;          // 回调 EchoServer 中对应函数
   std::function<void(EventLoop*)> m_EpollTimeoutCallback;           // 回调 EchoServer 中对应函数
 public:
-  TcpServer(const std::string& ip, const uint16_t port);
+  TcpServer(const std::string& ip, const uint16_t port, int threadNum = 3);
   ~TcpServer();
 
   void Start();      // 开启事件循环

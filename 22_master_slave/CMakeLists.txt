@@ -9,6 +9,7 @@ file(GLOB_RECURSE SERVER_SOURCES
   "src/net/**.h"
 )
 add_executable(${SERVER} ${SERVER_SOURCES})
+target_link_libraries(${SERVER} PRIVATE pthread)
 
 set(CLIENT Client)
 file(GLOB_RECURSE CLIENT_SOURCES

@@ -1,6 +1,9 @@
 #include "EventLoop.h"
 
 #include "Epoll.h"
+#include <cstdio>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 EventLoop::EventLoop() 
   : m_Ep(new Epoll) {
@@ -12,6 +15,7 @@ EventLoop::~EventLoop() {
 } 
 
 void EventLoop::Run() {
+  printf("EventLoop::Run() on thread %ld.\n", syscall(SYS_gettid));
   while (true) {
     // 获取有事件的Channel
     std::vector<Channel*> channels = m_Ep->Loop(10 * 1000);
