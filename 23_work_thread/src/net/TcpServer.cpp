@@ -2,6 +2,7 @@
 
 #include "Connection.h"
 #include "EventLoop.h"
+#include "ThreadPool.h"
 
 #include <cstdio>
 #include <functional>
@@ -17,7 +18,7 @@ TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum)
   m_Acceptor->SetNewConnectionCallback(std::bind(&TcpServer::OnNewConnection, this, std::placeholders::_1));
 
   // 创建线程池
-  m_ThreadPool = new ThreadPool(m_ThreadNum);
+  m_ThreadPool = new ThreadPool(m_ThreadNum, ThreadPool::Type::IO);
   // 创建从事件循环
   for (int i = 0; i < m_ThreadNum; i++) {
     m_SubLoops.push_back(new EventLoop);

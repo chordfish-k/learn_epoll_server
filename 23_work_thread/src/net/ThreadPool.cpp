@@ -9,11 +9,15 @@
 #include <sys/syscall.h>
 
 // 构造函数，启动threadNum
-ThreadPool::ThreadPool(size_t threadNum) {
+ThreadPool::ThreadPool(size_t threadNum, const ThreadPool::Type threadType)
+  : m_Stop(false), m_ThreadType(threadType) {
   // 启动threadNum个线程，每个线程将阻塞在条件变量上
   for (size_t i = 0; i < threadNum; i++) {
     m_Threads.emplace_back([this]{
-      printf("Create thread(%ld).\n", syscall(SYS_gettid));
+      printf("Create thread(%ld, type=%s).\n",
+        syscall(SYS_gettid),
+        m_ThreadType == Type::IO ? "IO" : "WORK"
+      );
     
       while (!m_Stop) {
         std::function<void()> task;
@@ -35,11 +39,14 @@ ThreadPool::ThreadPool(size_t threadNum) {
           task = std::move(this->m_TaskQueue.front());
           this->m_TaskQueue.pop();
         }
-
-        printf("Thread is %ld.\n", syscall(SYS_gettid));
         
         // 执行任务
         task();
+
+        printf("Thread(%ld, type=%s) execute task.\n",
+          syscall(SYS_gettid),
+          m_ThreadType == Type::IO ? "IO" : "WORK"
+        );
       }
     });
   }
