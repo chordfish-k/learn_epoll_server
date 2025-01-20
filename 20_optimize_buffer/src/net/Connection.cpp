@@ -108,7 +108,7 @@ void Connection::SetErrorCallback(std::function<void(Connection*)> fn) {
   m_ErrorCallback = fn;
 }
 
-void Connection::SetMessageCallback(std::function<void(Connection*, std::string)> fn) {
+void Connection::SetMessageCallback(std::function<void(Connection*, std::string&)> fn) {
   m_MessageCallback = fn;
 }
 
@@ -118,7 +118,7 @@ void Connection::SetSendCompleteCallback(std::function<void(Connection*)> fn) {
 
 void Connection::Send(const char* data, size_t size) {
   // 把需要发送的数据追加到缓冲区
-  m_OutputBuffer.Append(data, size);
+  m_OutputBuffer.AppendWithHeader(data, size);
   // 注册写事件
   m_ClientChannel->SetEnableWriting(true);
 }

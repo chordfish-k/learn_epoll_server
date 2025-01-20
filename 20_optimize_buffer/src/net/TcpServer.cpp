@@ -61,7 +61,7 @@ void TcpServer::OnErrorConnection(Connection* conn) {
 
 }
 
-void TcpServer::OnMessage(Connection* conn, std::string message) {
+void TcpServer::OnMessage(Connection* conn, std::string& message) {
   // // 假设经过若干处理，得到结果
   // message = "Reply: " + message;
   
@@ -104,7 +104,7 @@ void TcpServer::SetErrorConnectionCallback(std::function<void(Connection*)> fn) 
   m_ErrorConnectionCallback = fn;
 }
 
-void TcpServer::SetMessageCallback(std::function<void(Connection*, std::string)> fn) {
+void TcpServer::SetMessageCallback(std::function<void(Connection*, std::string&)> fn) {
   m_MessageCallback = fn;
 }
 

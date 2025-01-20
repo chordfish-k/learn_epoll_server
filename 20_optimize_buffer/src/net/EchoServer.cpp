@@ -33,17 +33,18 @@ void EchoServer::OnErrorConnection(Connection* conn) {
 
 }
 
-void EchoServer::OnMessage(Connection* conn, std::string message) {
+void EchoServer::OnMessage(Connection* conn, std::string& message) {
   // 假设经过若干处理，得到结果
   message = "Reply: " + message;
   
-  // 处理响应报文
-  int len = message.size();
-  std::string tmpBuf((char*)&len, 4); // 把报文头部填充到报文
-  tmpBuf.append(message);
+  // 该部分处理已添加在Buffer类中
+  // // 处理响应报文
+  // int len = message.size();
+  // std::string tmpBuf((char*)&len, 4); // 把报文头部填充到报文
+  // tmpBuf.append(message);
 
   //send(conn->GetFd(), tmpBuf.data(), tmpBuf.size(), 0);
-  conn->Send(tmpBuf.data(), tmpBuf.size());
+  conn->Send(message.data(), message.size());
 }
 
 void EchoServer::OnSendComplete(Connection* conn) {
