@@ -12,9 +12,9 @@
 TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum) 
   : m_ThreadNum(threadNum), m_MainLoop(new EventLoop), 
   m_Acceptor(m_MainLoop, ip, port), m_ThreadPool(m_ThreadNum) {
-  // 主事件循环超时事件
+  // 创建主事件循环
   m_MainLoop->SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
-  // 建立新连接的回调事件
+  
   m_Acceptor.SetNewConnectionCallback(std::bind(&TcpServer::OnNewConnection, this, std::placeholders::_1));
 
   // 创建从事件循环
