@@ -16,5 +16,6 @@ public:
   ~Epoll();
 
   void UpdateChannel(Channel* ch);               // 把channel添加/更新到红黑树上，channel中有fd和需要监视的事件
+  void RemoveChannel(Channel* ch);               // 把channel从红黑树上删除
   std::vector<Channel*> Loop(int timeout = -1);  // 运行epoll_wait(),等待事件发生，返回已发生的事件
 };

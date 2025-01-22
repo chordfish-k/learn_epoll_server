@@ -1,4 +1,5 @@
 #include "Connection.h"
+
 #include "EventLoop.h"
 #include "Socket.h"
 
@@ -10,7 +11,7 @@
 #include <unistd.h>
 
 Connection::Connection(EventLoop* loop, Socket* clientSocket) 
-  : m_Loop(loop), m_ClientSocket(clientSocket) {
+  : m_Loop(loop), m_ClientSocket(clientSocket), m_Disconnect(false) {
   // 为新客户端连接准备读事件，并添加到epoll
   m_ClientChannel = new Channel(m_Loop, m_ClientSocket->GetFd());
   m_ClientChannel->SetReadCallback(std::bind(&Connection::OnMessage, this));
@@ -24,6 +25,7 @@ Connection::Connection(EventLoop* loop, Socket* clientSocket)
 Connection::~Connection() {
   delete m_ClientSocket;
   delete m_ClientChannel;
+  printf("Connection已析构");
 }
 
 int Connection::GetFd() const {
@@ -39,17 +41,21 @@ uint16_t Connection::GetPort() const {
 }
 
 void Connection::OnClose() {
+  m_Disconnect = true;
+  m_ClientChannel->Remove();  // 从事件循环中删除Channel
   if (m_CloseCallback)
-    m_CloseCallback(this);
+    m_CloseCallback(shared_from_this());
 }
 
 void Connection::OnError() {
+  m_Disconnect = true;
+  m_ClientChannel->Remove();  // 从事件循环中删除Channel
   if (m_ErrorCallback)
-    m_ErrorCallback(this);
+    m_ErrorCallback(shared_from_this());
 }
 
 void Connection::OnMessage() {
-  // 否则就是客户端连接的fd有事件j
+  // 否则就是客户端连接的fd有事件
   // 接收缓冲区中有数据可以读
   char buffer[1024];
   while (true) {
@@ -57,9 +63,6 @@ void Connection::OnMessage() {
     bzero(&buffer, sizeof(buffer));
     ssize_t nread = read(GetFd(), buffer, sizeof(buffer));
     if (nread > 0) {
-      // 成功读取到数据
-      // printf("Recv(fd=%d): %s\n", GetFd(), buffer);
-      // send(GetFd(), buffer, strlen(buffer), 0);
       // 将接收到的数据追加到缓冲区
       m_InputBuffer.Append(buffer, nread);
     }
@@ -70,7 +73,6 @@ void Connection::OnMessage() {
     else if (nread == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
       // 全部的数据已经读取完毕
       // 处理m_InputBuffer的信息
-      //printf("Recv(fd=%d): %s\n", GetFd(), m_InputBuffer.GetData());
       while (true) {
         // 根据报文长度逐个分离报文
         int len;
@@ -86,7 +88,7 @@ void Connection::OnMessage() {
 
         // 调用回调处理报文
         if (m_MessageCallback)
-          m_MessageCallback(this, message);
+          m_MessageCallback(shared_from_this(), message);
       }
       
       m_InputBuffer.Clean();
@@ -100,23 +102,27 @@ void Connection::OnMessage() {
   }
 }
 
-void Connection::SetCloseCallback(std::function<void(Connection*)> fn) {
+void Connection::SetCloseCallback(std::function<void(Ref<Connection>)> fn) {
   m_CloseCallback = fn; 
 }
 
-void Connection::SetErrorCallback(std::function<void(Connection*)> fn) {
+void Connection::SetErrorCallback(std::function<void(Ref<Connection>)> fn) {
   m_ErrorCallback = fn;
 }
 
-void Connection::SetMessageCallback(std::function<void(Connection*, std::string&)> fn) {
+void Connection::SetMessageCallback(std::function<void(Ref<Connection>, std::string&)> fn) {
   m_MessageCallback = fn;
 }
 
-void Connection::SetSendCompleteCallback(std::function<void(Connection*)> fn) {
+void Connection::SetSendCompleteCallback(std::function<void(Ref<Connection>)> fn) {
   m_SendCompleteCallback = fn;
 }
 
 void Connection::Send(const char* data, size_t size) {
+  if (m_Disconnect) {
+    printf("Client(fd=%d) has diconnected.\n", GetFd());
+    return;
+  }
   // 把需要发送的数据追加到缓冲区
   m_OutputBuffer.AppendWithHeader(data, size);
   // 注册写事件
@@ -135,6 +141,6 @@ void Connection::OnWrite() {
     m_ClientChannel->SetEnableWriting(false);
     // 发送完成，调用回调
     if (m_SendCompleteCallback)
-      m_SendCompleteCallback(this);
+      m_SendCompleteCallback(shared_from_this());
   }
 }

@@ -20,6 +20,7 @@ public:
   void Run();
   Epoll* GetEpoll() const;
 
-  void UpdateChannel(Channel* ch);  // 把channel添加/更新到红黑树上，channel中有fd和需要监视的事件
+  void UpdateChannel(Channel* ch);  // 把Channel添加/更新到红黑树上，channel中有fd和需要监视的事件
+  void RemoveChannel(Channel* ch);  // 从epoll红黑树上删除Channel
   void SetEpollTimeoutCallback(std::function<void(EventLoop*)> fn); 
 };

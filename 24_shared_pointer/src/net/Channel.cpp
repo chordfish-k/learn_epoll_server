@@ -42,6 +42,17 @@ void Channel::SetEnableWriting(bool enable) {
   m_Loop->UpdateChannel(this);
 }
 
+void Channel::DisableAllEvent() {
+  m_Events = 0;
+  m_Loop->UpdateChannel(this);
+}
+
+void Channel::Remove() {
+  // 先取消全部事件
+  DisableAllEvent();
+  m_Loop->RemoveChannel(this);
+}
+
 void Channel::SetInEpoll() {
   m_InEpoll = true;
 }
@@ -83,7 +94,7 @@ void Channel::HandleEvent() {
       m_WriteCallback();
   }
   else {
-    // 调用关闭回调函数
+    // 调用错误回调函数
     if (m_ErrorCallback)
       m_ErrorCallback();   
   }

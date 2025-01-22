@@ -26,15 +26,25 @@ void Epoll::UpdateChannel(Channel* ch) {
   if (ch->IsInEpoll()) {
     // 如果channel已经在树上，则修改(EPOLL_CTL_MOD)
     if (epoll_ctl(m_EpollFd, EPOLL_CTL_MOD, ch->GetFd(), &ev) == -1) {
-      perror("epoll_ctl() failed"); exit(-1);
+      perror("epoll_ctl() modify failed"); exit(-1);
     }
   }
   else {
     // 如果不在树上
     if (epoll_ctl(m_EpollFd, EPOLL_CTL_ADD, ch->GetFd(), &ev) == -1) {
-      perror("epoll_ctl() failed"); exit(-1);
+      perror("epoll_ctl() add failed"); exit(-1);
     }
     ch->SetInEpoll(); // 告知Channel，fd已经在epoll树上
+  }
+}
+
+void Epoll::RemoveChannel(Channel* ch) {
+  if (ch->IsInEpoll()) {
+    // 从红黑树上删除Channel的fd
+    printf("RemoveChannel()\n");
+    if (epoll_ctl(m_EpollFd, EPOLL_CTL_DEL, ch->GetFd(), 0) == -1) {
+      perror("epoll_ctl() delete failed"); exit(-1);
+    }
   }
 }
 

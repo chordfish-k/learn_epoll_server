@@ -20,12 +20,12 @@ public:
 
   void Start();   // 启动服务
 
-  void HandleNewConnection(Connection* clientSocket);   // 处理新的连接请求，在TcpServer类中回调该函数
-  void HandleCloseConnection(Connection* conn);         // 关闭客户端的连接，在TcpServer中回调该函数
-  void HandleErrorConnection(Connection* conn);         // 客户端的连接错误，在TcpServer中回调该函数
-  void HandleMessage(Connection* conn, std::string& message);  // 处理客户端的请求报文，在TcpServer类中回调该函数
-  void HandleSendComplete(Connection* conn);            // 数据发送完成后，在TcpServer类中回调该函数
+  void HandleNewConnection(Ref<Connection> clientSocket);   // 处理新的连接请求，在TcpServer类中回调该函数
+  void HandleCloseConnection(Ref<Connection> conn);         // 关闭客户端的连接，在TcpServer中回调该函数
+  void HandleErrorConnection(Ref<Connection> conn);         // 客户端的连接错误，在TcpServer中回调该函数
+  void HandleMessage(Ref<Connection> conn, std::string& message);  // 处理客户端的请求报文，在TcpServer类中回调该函数
+  void HandleSendComplete(Ref<Connection> conn);            // 数据发送完成后，在TcpServer类中回调该函数
   // void OnEpollTimeout(EventLoop* loop);              // epoll_wait超时，在TcpServer类中回调
 
-  void OnMessage(Connection* conn, std::string& message); // 处理客户端的请求报文，用于添加给线程池
+  void OnMessage(Ref<Connection> conn, std::string& message); // 处理客户端的请求报文，用于添加给线程池
 };

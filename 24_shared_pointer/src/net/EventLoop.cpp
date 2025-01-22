@@ -42,6 +42,10 @@ void EventLoop::UpdateChannel(Channel* ch) {
   m_Ep->UpdateChannel(ch);
 }
 
+void EventLoop::RemoveChannel(Channel* ch) {
+  m_Ep->RemoveChannel(ch);
+}
+
 void EventLoop::SetEpollTimeoutCallback(std::function<void(EventLoop*)> fn) {
   m_EpollTimeoutCallback = fn;
 }

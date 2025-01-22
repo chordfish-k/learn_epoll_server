@@ -25,25 +25,25 @@ void EchoServer::Start() {
   m_TcpServer.Start();
 }
 
-void EchoServer::HandleNewConnection(Connection* clientSocket) {
+void EchoServer::HandleNewConnection(Ref<Connection> clientSocket) {
   std::cout << "New connection come in.\n";
 }
 
-void EchoServer::HandleCloseConnection(Connection* conn) {
+void EchoServer::HandleCloseConnection(Ref<Connection> conn) {
   std::cout << "EchoServer conn close.\n";
 }
 
-void EchoServer::HandleErrorConnection(Connection* conn) {
+void EchoServer::HandleErrorConnection(Ref<Connection> conn) {
 
 }
 
-void EchoServer::HandleMessage(Connection* conn, std::string& message) {
+void EchoServer::HandleMessage(Ref<Connection> conn, std::string& message) {
   // 把业务添加到任务队列中
   //printf("IO thread = %ld.\n", syscall(SYS_gettid));
   m_ThreadPool.AddTask(std::bind(&EchoServer::OnMessage, this, conn, message));
 }
 
-void EchoServer::HandleSendComplete(Connection* conn) {
+void EchoServer::HandleSendComplete(Ref<Connection> conn) {
   std::cout << "Message send complete.\n";
 }
 
@@ -51,9 +51,8 @@ void EchoServer::HandleSendComplete(Connection* conn) {
 //   std::cout << "EchoServer timeout.\n";
 // }
 
-void EchoServer::OnMessage(Connection* conn, std::string& message) {
+void EchoServer::OnMessage(Ref<Connection> conn, std::string& message) {
   // 假设经过若干处理，得到结果
-  //printf("Work thread = %ld.\n", syscall(SYS_gettid));
   message = "Reply: " + message;
   conn->Send(message.data(), message.size());
 }

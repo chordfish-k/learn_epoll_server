@@ -2,6 +2,7 @@
 
 #include "Connection.h"
 #include "EventLoop.h"
+#include "Pointer.h"
 #include "ThreadPool.h"
 
 #include <cstdio>
@@ -33,10 +34,10 @@ TcpServer::~TcpServer() {
   delete m_Acceptor;
   delete m_MainLoop;
 
-  // 释放全部Fd
-  for (auto &connPair : m_Conns) {
-    delete connPair.second;
-  }
+  // // 释放全部Fd
+  // for (auto &connPair : m_Conns) {
+  //   delete connPair.second;
+  // }
 
   // 释放从事件循环
   for (auto& subLoop: m_SubLoops)
@@ -51,9 +52,9 @@ void TcpServer::Start() {
 }
 
 void TcpServer::OnNewConnection(Socket* clientSocket) {
-  // Connection* conn = new Connection(m_MainLoop, clientSocket); // 还没释放conn
+  // Ref<Connection> conn = new Connection(m_MainLoop, clientSocket); // 还没释放conn
   const int idx = clientSocket->GetFd() % m_ThreadNum; // 随机选取一个从事件循环
-  Connection* conn = new Connection( m_SubLoops[idx], clientSocket); // 还没释放conn
+  Ref<Connection> conn = CreateRef<Connection>( m_SubLoops[idx], clientSocket); // 还没释放conn
   conn->SetCloseCallback(std::bind(&TcpServer::OnCloseConnection, this, std::placeholders::_1));
   conn->SetErrorCallback(std::bind(&TcpServer::OnErrorConnection, this, std::placeholders::_1));
   conn->SetMessageCallback(std::bind(&TcpServer::OnMessage, this, std::placeholders::_1, std::placeholders::_2));
@@ -66,33 +67,32 @@ void TcpServer::OnNewConnection(Socket* clientSocket) {
     m_NewConnectionCallback(conn);
 }
 
-void TcpServer::OnCloseConnection(Connection* conn) {
+void TcpServer::OnCloseConnection(Ref<Connection> conn) {
   // 连接关闭前回调EchoServer类的方法
   if (m_CloseConnectionCallback)
     m_CloseConnectionCallback(conn);
 
   // close(conn->GetFd()); // 在conn的析构函数->socket的析构函数中，会关闭fd
   m_Conns.erase(conn->GetFd());
-  delete conn;
+  // delete conn; // 使用智能指针，不用手动释放
 }
 
-void TcpServer::OnErrorConnection(Connection* conn) {
+void TcpServer::OnErrorConnection(Ref<Connection> conn) {
   if (m_ErrorConnectionCallback)
     m_ErrorConnectionCallback(conn);
 
   // close(conn->GetFd());
   m_Conns.erase(conn->GetFd());
-  delete conn;
-
+  // delete conn;
 }
 
-void TcpServer::OnMessage(Connection* conn, std::string& message) {
+void TcpServer::OnMessage(Ref<Connection> conn, std::string& message) {
   // 假设经过若干处理，得到结果
   if (m_MessageCallback)
     m_MessageCallback(conn, message);
 }
 
-void TcpServer::OnSendComplete(Connection* conn) {
+void TcpServer::OnSendComplete(Ref<Connection> conn) {
   if (m_SendCompleteCallback)
     m_SendCompleteCallback(conn);
 }
@@ -102,24 +102,24 @@ void TcpServer::OnEpollTimeout(EventLoop* loop) {
     m_EpollTimeoutCallback(loop);
 }
 
-void TcpServer::SetNewConnectionCallback(std::function<void(Connection*)> fn) {
+void TcpServer::SetNewConnectionCallback(std::function<void(Ref<Connection>)> fn) {
   m_NewConnectionCallback = fn;
 }
 
-void TcpServer::SetCloseConnectionCallback(std::function<void(Connection*)> fn) {
+void TcpServer::SetCloseConnectionCallback(std::function<void(Ref<Connection>)> fn) {
   m_CloseConnectionCallback = fn;
 }
 
-void TcpServer::SetErrorConnectionCallback(std::function<void(Connection*)> fn) {
+void TcpServer::SetErrorConnectionCallback(std::function<void(Ref<Connection>)> fn) {
   
   m_ErrorConnectionCallback = fn;
 }
 
-void TcpServer::SetMessageCallback(std::function<void(Connection*, std::string&)> fn) {
+void TcpServer::SetMessageCallback(std::function<void(Ref<Connection>, std::string&)> fn) {
   m_MessageCallback = fn;
 }
 
-void TcpServer::SetSendCompleteCallback(std::function<void(Connection*)> fn) {
+void TcpServer::SetSendCompleteCallback(std::function<void(Ref<Connection>)> fn) {
   m_SendCompleteCallback = fn;
 }
 
