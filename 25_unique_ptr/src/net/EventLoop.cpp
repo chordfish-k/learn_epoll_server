@@ -11,7 +11,6 @@ EventLoop::EventLoop()
 }
 
 EventLoop::~EventLoop() {
-  delete m_Ep;
 } 
 
 void EventLoop::Run() {
@@ -32,10 +31,6 @@ void EventLoop::Run() {
       }
     }
   }
-}
-
-Epoll* EventLoop::GetEpoll() const {
-  return m_Ep;
 }
 
 void EventLoop::UpdateChannel(Channel* ch) {

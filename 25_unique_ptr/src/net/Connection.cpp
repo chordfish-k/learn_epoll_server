@@ -10,10 +10,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Connection::Connection(EventLoop* loop, Socket* clientSocket) 
-  : m_Loop(loop), m_ClientSocket(clientSocket), m_Disconnect(false) {
+Connection::Connection(const Scope<EventLoop>& loop, Scope<Socket> clientSocket) 
+  : m_Loop(loop), m_ClientSocket(std::move(clientSocket)), m_Disconnect(false) {
   // 为新客户端连接准备读事件，并添加到epoll
-  m_ClientChannel = new Channel(m_Loop, m_ClientSocket->GetFd());
+  m_ClientChannel = CreateScope<Channel>(m_Loop, m_ClientSocket->GetFd());
   m_ClientChannel->SetReadCallback(std::bind(&Connection::OnMessage, this));
   m_ClientChannel->SetWriteCallback(std::bind(&Connection::OnWrite, this));
   m_ClientChannel->SetCloseCallback(std::bind(&Connection::OnClose, this));
@@ -23,9 +23,6 @@ Connection::Connection(EventLoop* loop, Socket* clientSocket)
 }
 
 Connection::~Connection() {
-  delete m_ClientSocket;
-  delete m_ClientChannel;
-  printf("Connection已析构");
 }
 
 int Connection::GetFd() const {

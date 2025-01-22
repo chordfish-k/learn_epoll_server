@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pointer.h"
 #include "Connection.h"
 #include "EventLoop.h"
 #include "Channel.h"
@@ -13,11 +14,11 @@
 class TcpServer
 {
 private:
-  EventLoop* m_MainLoop;              // 一个TcpServer只有一个主事件循环
-  std::vector<EventLoop*> m_SubLoops; // 一个TcpServer可以有多个从事件循环
-  Acceptor* m_Acceptor;               // 一个TcpServer只有一个Acceptor对象
-  ThreadPool* m_ThreadPool;           // 线程池
-  int m_ThreadNum;                    // 线程池的大小，即从事件循环的个数
+  Scope<EventLoop> m_MainLoop;              // 一个TcpServer只有一个主事件循环
+  std::vector<Scope<EventLoop>> m_SubLoops; // 一个TcpServer可以有多个从事件循环
+  Acceptor m_Acceptor;                      // 一个TcpServer只有一个Acceptor对象
+  int m_ThreadNum;                          // 线程池的大小，即从事件循环的个数
+  ThreadPool m_ThreadPool;                  // 线程池
 
   std::map<int, Ref<Connection>> m_Conns; // 一个TcpServer有多个Connection对象，存放在map容器中
   
@@ -33,7 +34,7 @@ public:
 
   void Start();      // 开启事件循环
   
-  void OnNewConnection(Socket* clientSocket);   // 处理新的连接请求，在Acceptor类中回调该函数
+  void OnNewConnection(Scope<Socket> clientSocket);   // 处理新的连接请求，在Acceptor类中回调该函数
   void OnCloseConnection(Ref<Connection> conn);     // 关闭客户端的连接，在Connection中回调该函数
   void OnErrorConnection(Ref<Connection> conn);     // 客户端的连接错误，在Connection中回调该函数
   void OnMessage(Ref<Connection> conn, std::string& message);  // 处理客户端的请求报文，在Connection类中回调该函数

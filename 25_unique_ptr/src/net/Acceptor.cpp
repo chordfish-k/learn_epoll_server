@@ -1,6 +1,6 @@
 #include "Acceptor.h"
 
-Acceptor::Acceptor(EventLoop* loop, const std::string& ip, const uint16_t port) 
+Acceptor::Acceptor(const Scope<EventLoop>& loop, const std::string& ip, const uint16_t port) 
   : m_Loop(loop), m_ServerSocket(), m_AcceptChannel(m_Loop, m_ServerSocket.GetFd()) {
   // m_ServerSocket = new Socket(); // 还没释放，以后再说
   // 服务端的地址和协议
@@ -25,13 +25,12 @@ Acceptor::~Acceptor() {
 
 void Acceptor::OnNewConnection() {
   InetAddress clientAddr; // 客户端的地址和协议
-  // new出来的socket暂时无法释放，后面再解决
-  Socket *clientSocket = new Socket(m_ServerSocket.Accept(clientAddr));
+  Scope<Socket> clientSocket = CreateScope<Socket>(m_ServerSocket.Accept(clientAddr));
   clientSocket->SetIpAndPort(clientAddr.GetIp(), clientAddr.GetPort());
-  // 为新客户端连接准备读事件，并添加到epoll中
-  m_NewConnectionCallback(clientSocket);
+  // 调用新连接回调
+  m_NewConnectionCallback(std::move(clientSocket));
 }
 
-void Acceptor::SetNewConnectionCallback(std::function<void(Socket*)> fn) {
+void Acceptor::SetNewConnectionCallback(std::function<void(Scope<Socket>)> fn) {
   m_NewConnectionCallback = fn;
 }

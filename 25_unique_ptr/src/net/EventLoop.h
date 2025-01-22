@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pointer.h"
 #include "Epoll.h"
 
 #include <functional>
@@ -11,14 +12,13 @@ class Epoll;
 class EventLoop
 {
 private:
-  Epoll* m_Ep;   // 每个事件循环只有一个Epoll
+  Scope<Epoll> m_Ep;   // 每个事件循环只有一个Epoll
   std::function<void(EventLoop*)> m_EpollTimeoutCallback = nullptr;
 public:
   EventLoop();  // 创建m_Ep
   ~EventLoop(); // 析构函数，销毁m_Ep
 
   void Run();
-  Epoll* GetEpoll() const;
 
   void UpdateChannel(Channel* ch);  // 把Channel添加/更新到红黑树上，channel中有fd和需要监视的事件
   void RemoveChannel(Channel* ch);  // 从epoll红黑树上删除Channel

@@ -14,9 +14,9 @@
 class Connection : public std::enable_shared_from_this<Connection>
 {
 private:
-  EventLoop* m_Loop;              // Connection对应的事件循环
-  Socket* m_ClientSocket;         // 与客户端通讯的socket
-  Channel* m_ClientChannel;       // Connection对应的Channel
+  const Scope<EventLoop>& m_Loop; // Connection对应的事件循环，由构造函数传入，无所有权
+  Scope<Socket> m_ClientSocket;   // 与客户端通讯的socket
+  Scope<Channel> m_ClientChannel; // Connection对应的Channel，一个服务器可能有很多个Connection，在堆上分配
   Buffer m_InputBuffer;           // 接收缓冲区
   Buffer m_OutputBuffer;          // 发送缓冲区
   std::atomic_bool m_Disconnect;  // 客户端连接释放已经断开，如果断开，设置为true，需要在工作线程中使用，要用原子类型
@@ -26,7 +26,7 @@ private:
   std::function<void(Ref<Connection>, std::string&)> m_MessageCallback;  // 处理报文的回调函数，回调TcpServer::OnMessage
   std::function<void(Ref<Connection>)> m_SendCompleteCallback;          // 发送完成回调函数，回调TcpServer::OnSendComplete
 public:
-  Connection(EventLoop* loop, Socket* clientSocket);
+  Connection(const Scope<EventLoop>& loop, Scope<Socket> clientSocket);
   ~Connection();
   
   int GetFd() const;

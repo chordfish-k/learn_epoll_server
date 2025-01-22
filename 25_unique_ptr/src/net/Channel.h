@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Pointer.h"
+
 #include <stdint.h>
 #include <functional>
 
@@ -9,18 +11,18 @@ class EventLoop;
 class Channel
 {
 private:
-  int m_Fd = -1;                          // Channel的fd，一个Channel对应一个fd 
-  EventLoop *m_Loop = nullptr;            // Channel所在的红黑树
-  bool m_InEpoll = false;                 // Channel是否已添加到epoll红黑树上
-  uint32_t m_Events = 0;                  // m_Fd需要监视的事件，如EPOLLIN
-  uint32_t m_REvents = 0;                 // 已发生的事件
+  int m_Fd = -1;                            // Channel的fd，一个Channel对应一个fd 
+  const Scope<EventLoop>& m_Loop; // Channel所在的事件循环，由构造函数传入，无所有权
+  bool m_InEpoll = false;                   // Channel是否已添加到epoll红黑树上
+  uint32_t m_Events = 0;                    // m_Fd需要监视的事件，如EPOLLIN
+  uint32_t m_REvents = 0;                   // 已发生的事件
   
   std::function<void()> m_ReadCallback = nullptr;    // m_Fd读事件的回调函数
   std::function<void()> m_WriteCallback = nullptr;    // m_Fd写事件的回调函数
   std::function<void()> m_CloseCallback = nullptr;   // m_Fd关闭的回调函数
   std::function<void()> m_ErrorCallback = nullptr;   // m_Fd发生错误的回调函数
 public:
-  Channel(EventLoop* loop, int fd);
+  Channel(const Scope<EventLoop>& loop, int fd);
   ~Channel();
 
   void UseEdgeTrigger();                // 采用边缘触发
