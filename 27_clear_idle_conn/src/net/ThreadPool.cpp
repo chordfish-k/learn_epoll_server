@@ -39,14 +39,14 @@ ThreadPool::ThreadPool(size_t threadNum, const ThreadPool::Type threadType)
           task = std::move(this->m_TaskQueue.front());
           this->m_TaskQueue.pop();
         }
+
         
+        printf("%s(%ld) execute task.\n",
+          m_ThreadType == Type::IO ? "IO" : "WORK",
+          syscall(SYS_gettid)
+        );
         // 执行任务
         task();
-
-        printf("Thread(%ld, type=%s) execute task.\n",
-          syscall(SYS_gettid),
-          m_ThreadType == Type::IO ? "IO" : "WORK"
-        );
       }
     });
   }

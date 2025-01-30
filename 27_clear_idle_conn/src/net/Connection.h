@@ -5,6 +5,7 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "Buffer.h"
+#include "Timestamp.h"
 
 #include <atomic>
 #include <functional>
@@ -27,6 +28,8 @@ private:
   std::function<void(Ref<Connection>)> m_ErrorCallback;                 // m_Fd发生错误的回调函数，回调TcpServer::OnErrorConnection
   std::function<void(Ref<Connection>, std::string&)> m_MessageCallback;  // 处理报文的回调函数，回调TcpServer::OnMessage
   std::function<void(Ref<Connection>)> m_SendCompleteCallback;          // 发送完成回调函数，回调TcpServer::OnSendComplete
+
+  Timestamp m_LastTime;           // 时间戳，创建Connection对象为当前时间，每接收到一个报文，更新为当前时间
 public:
   Connection(EventLoop* loop, Scope<Socket> clientSocket);
   ~Connection();

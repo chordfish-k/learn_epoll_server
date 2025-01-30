@@ -2,6 +2,7 @@
 
 #include "EventLoop.h"
 #include "Socket.h"
+#include "Timestamp.h"
 
 #include <cstdio>
 #include <cstring>
@@ -84,6 +85,10 @@ void Connection::OnMessage() {
         m_InputBuffer.Erase(0, len + 4);
 
         printf("Message(fd=%d, thread=%ld): %s\n", GetFd(), syscall(SYS_gettid), message.c_str());
+
+        // 更新时间戳
+        m_LastTime = Timestamp::now();
+        // std::cout << "LastTime=" << m_LastTime.toString() << std::endl;
 
         // 调用回调处理报文
         if (m_MessageCallback)

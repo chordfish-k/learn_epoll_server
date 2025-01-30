@@ -23,10 +23,15 @@ private:
   std::queue<std::function<void()>> m_TaskQueue;  // 事件循环线程被eventFd唤醒后执行的任务队列
   std::mutex m_Mtx;                               // 任务队列同步的互斥锁
   
-  int m_WakeUpFd;               // 用于唤醒事件循环线程的eventFd，非阻塞
-  Scope<Channel> m_WakeChannel; // 用于唤醒事件循环线程的Channel
+  int m_WakeUpFd;                 // 用于唤醒事件循环线程的eventFd，非阻塞
+  Scope<Channel> m_WakeChannel;   // 用于唤醒事件循环线程的Channel
+
+  int m_TimerFd;                  // 用于计时器的TimerFd，
+  Scope<Channel> m_TimerChannel;  // 用于计时器的Channel
+
+  bool m_IsMainLoop;              // 是否是主事件循环
 public:
-  EventLoop();  // 创建m_Ep
+  EventLoop(bool isMainLoop);  // 创建m_Ep
   ~EventLoop(); // 析构函数，销毁m_Ep
 
   void Run();   // 在TcpServer中的线程池运行
@@ -39,4 +44,5 @@ public:
   void QueueInLoop(std::function<void()> fn); // 把任务队列添加到队列中
   void WakeUp();                              // 唤醒事件循环
   void HandleWakeUp();                        // 事件循环线程被eventFd唤醒后执行的函数
+  void HandleTimer();                         // 处理定时器到时
 };

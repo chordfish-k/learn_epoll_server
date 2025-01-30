@@ -1,22 +1,42 @@
 #include "EventLoop.h"
 
 #include "Channel.h"
-#include "Epoll.h"
-#include <cstdio>
-#include <functional>
-#include <mutex>
-#include <sys/eventfd.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 
-EventLoop::EventLoop() 
-  : m_Ep(new Epoll), 
+#include <cstdio>
+#include <cstring>
+#include <sys/eventfd.h>
+#include <sys/time.h>
+#include <sys/timerfd.h>
+
+namespace Util {
+
+int CreateTimerFd(int sec = 30) {
+  int tfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK); // 创建timerFd
+  itimerspec timeout;
+  memset(&timeout, 0, sizeof(itimerspec));
+  timeout.it_value.tv_sec = 5;  // 定时时间为5秒
+  timeout.it_interval.tv_nsec = 0;
+  timerfd_settime(tfd, 0, &timeout, 0);
+  return tfd;
+} 
+
+};
+
+EventLoop::EventLoop(bool isMainLoop) : 
+  m_Ep(new Epoll), 
+  m_IsMainLoop(isMainLoop),
   m_WakeUpFd(eventfd(0, EFD_NONBLOCK)), 
-  m_WakeChannel(new Channel(this, m_WakeUpFd)) 
+  m_WakeChannel(new Channel(this, m_WakeUpFd)),
+  m_TimerFd(Util::CreateTimerFd()),
+  m_TimerChannel(new Channel(this, m_TimerFd))
 {
   // 注册读事件和回调，如果WakeUpFd由数据，则会执行HandleWakeUp()
   m_WakeChannel->SetReadCallback(std::bind(&EventLoop::HandleWakeUp, this));
   m_WakeChannel->SetEnableReading(true);
+
+  // 定时器事件的注册
+  m_TimerChannel->SetReadCallback(std::bind(&EventLoop::HandleTimer, this));
+  m_TimerChannel->SetEnableReading(true);
 }
 
 EventLoop::~EventLoop() {
@@ -77,7 +97,7 @@ void EventLoop::WakeUp() {
 }
 
 void EventLoop::HandleWakeUp() {
-  printf("HandleWakeUp() thread is %ld\n", syscall(SYS_gettid));
+  // printf("HandleWakeUp() thread is %ld\n", syscall(SYS_gettid));
   // 读取出eventFd的值
   uint64_t val;
   read(m_WakeUpFd, &val, sizeof(val));
@@ -94,4 +114,18 @@ void EventLoop::HandleWakeUp() {
     // 执行任务
     fn();
   }
+}
+
+void EventLoop::HandleTimer() {
+  // 重新定时
+  itimerspec timeout;
+  memset(&timeout, 0, sizeof(itimerspec));
+  timeout.it_value.tv_sec = 5;  // 定时时间为5秒
+  timeout.it_interval.tv_nsec = 0;
+  timerfd_settime(m_TimerFd, 0, &timeout, 0);
+
+  if (m_IsMainLoop)
+    printf("主事件循环定时器时间到了.\n");
+  else
+    printf("从事件循环定时器时间到了.\n");
 }
