@@ -12,7 +12,7 @@ class Channel
 {
 private:
   int m_Fd = -1;                            // Channel的fd，一个Channel对应一个fd 
-  const Scope<EventLoop>& m_Loop; // Channel所在的事件循环，由构造函数传入，无所有权
+  EventLoop* m_Loop; // Channel所在的事件循环，由构造函数传入，无所有权
   bool m_InEpoll = false;                   // Channel是否已添加到epoll红黑树上
   uint32_t m_Events = 0;                    // m_Fd需要监视的事件，如EPOLLIN
   uint32_t m_REvents = 0;                   // 已发生的事件
@@ -22,7 +22,7 @@ private:
   std::function<void()> m_CloseCallback = nullptr;   // m_Fd关闭的回调函数
   std::function<void()> m_ErrorCallback = nullptr;   // m_Fd发生错误的回调函数
 public:
-  Channel(const Scope<EventLoop>& loop, int fd);
+  Channel(EventLoop* loop, int fd);
   ~Channel();
 
   void UseEdgeTrigger();                // 采用边缘触发

@@ -11,7 +11,7 @@
 
 TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum) 
   : m_ThreadNum(threadNum), m_MainLoop(new EventLoop), 
-  m_Acceptor(m_MainLoop, ip, port), m_ThreadPool(m_ThreadNum) {
+  m_Acceptor(m_MainLoop.get(), ip, port), m_ThreadPool(m_ThreadNum) {
   // 创建主事件循环
   m_MainLoop->SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
   
@@ -36,7 +36,7 @@ void TcpServer::Start() {
 
 void TcpServer::OnNewConnection(Scope<Socket> clientSocket) {
   const int idx = clientSocket->GetFd() % m_ThreadNum; // 随机选取一个从事件循环
-  Ref<Connection> conn(new Connection(m_SubLoops[idx], std::move(clientSocket))); // 还没释放conn
+  Ref<Connection> conn(new Connection(m_SubLoops[idx].get(), std::move(clientSocket))); // 还没释放conn
   conn->SetCloseCallback(std::bind(&TcpServer::OnCloseConnection, this, std::placeholders::_1));
   conn->SetErrorCallback(std::bind(&TcpServer::OnErrorConnection, this, std::placeholders::_1));
   conn->SetMessageCallback(std::bind(&TcpServer::OnMessage, this, std::placeholders::_1, std::placeholders::_2));

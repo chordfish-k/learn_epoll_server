@@ -74,3 +74,7 @@ void ThreadPool::AddTask(std::function<void()> task) {
   //唤醒一个线程
   m_CondVar.notify_one();
 }
+
+size_t ThreadPool::Size() const {
+  return m_Threads.size();
+}

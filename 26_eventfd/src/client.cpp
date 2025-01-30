@@ -44,7 +44,7 @@ int main(int argc, const char** argv) {
 
   printf("Connect(%s:%s) OK.\n", argv[1], argv[2]);
 
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     // 从命令行输入内容
     memset(buffer, 0, sizeof(buffer));
     sprintf(buffer, "这是第%03d条信息。", i);
@@ -60,7 +60,7 @@ int main(int argc, const char** argv) {
     send(clientFd, tmpBuf, len + 4, 0);
   }
 
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     // 读取报文头部
     int len;
     recv(clientFd, &len, 4, 0);

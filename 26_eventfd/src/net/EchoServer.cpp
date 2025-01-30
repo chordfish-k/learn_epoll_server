@@ -38,9 +38,14 @@ void EchoServer::HandleErrorConnection(Ref<Connection> conn) {
 }
 
 void EchoServer::HandleMessage(Ref<Connection> conn, std::string& message) {
-  // 把业务添加到任务队列中
-  //printf("IO thread = %ld.\n", syscall(SYS_gettid));
-  m_ThreadPool.AddTask(std::bind(&EchoServer::OnMessage, this, conn, message));
+  if (m_ThreadPool.Size() == 0) {
+    // 如果没有工作线程，表示在IO线程中计算
+    OnMessage(conn, message);
+  }
+  else {
+    // 把业务添加到任务队列中
+    m_ThreadPool.AddTask(std::bind(&EchoServer::OnMessage, this, conn, message));
+  }
 }
 
 void EchoServer::HandleSendComplete(Ref<Connection> conn) {

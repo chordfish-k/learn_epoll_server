@@ -11,7 +11,7 @@ int main(int argc, const char** argv) {
   //TcpServer tcpServer(argv[1], atoi(argv[2]));
   //tcpServer.Start();
   
-  EchoServer echoServer(argv[1], atoi(argv[2]));
+  EchoServer echoServer(argv[1], atoi(argv[2]), 3, 3);
   echoServer.Start();
   
   return 0;

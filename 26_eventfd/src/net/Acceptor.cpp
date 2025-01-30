@@ -1,6 +1,6 @@
 #include "Acceptor.h"
 
-Acceptor::Acceptor(const Scope<EventLoop>& loop, const std::string& ip, const uint16_t port) 
+Acceptor::Acceptor(EventLoop* loop, const std::string& ip, const uint16_t port) 
   : m_Loop(loop), m_ServerSocket(), m_AcceptChannel(m_Loop, m_ServerSocket.GetFd()) {
   // m_ServerSocket = new Socket(); // 还没释放，以后再说
   // 服务端的地址和协议

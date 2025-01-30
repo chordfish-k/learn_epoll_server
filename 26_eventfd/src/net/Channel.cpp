@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Channel::Channel(const Scope<EventLoop>& loop, int fd) 
+Channel::Channel(EventLoop* loop, int fd) 
   : m_Loop(loop), m_Fd(fd) {
 
 }

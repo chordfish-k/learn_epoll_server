@@ -33,4 +33,6 @@ public:
 
   // 把任务添加到队列
   void AddTask(std::function<void()> task);
+
+  size_t Size() const;
 };

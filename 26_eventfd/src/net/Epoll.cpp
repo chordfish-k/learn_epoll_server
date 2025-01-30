@@ -41,7 +41,7 @@ void Epoll::UpdateChannel(Channel* ch) {
 void Epoll::RemoveChannel(Channel* ch) {
   if (ch->IsInEpoll()) {
     // 从红黑树上删除Channel的fd
-    printf("RemoveChannel()\n");
+    // printf("RemoveChannel()\n");
     if (epoll_ctl(m_EpollFd, EPOLL_CTL_DEL, ch->GetFd(), 0) == -1) {
       perror("epoll_ctl() delete failed"); exit(-1);
     }

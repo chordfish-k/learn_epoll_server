@@ -5,12 +5,14 @@
 
 #include <cstdio>
 #include <cstring>
+#include <functional>
 #include <string>
 #include <strings.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
-Connection::Connection(const Scope<EventLoop>& loop, Scope<Socket> clientSocket) 
+Connection::Connection(EventLoop* loop, Scope<Socket> clientSocket) 
   : m_Loop(loop), m_ClientSocket(std::move(clientSocket)), m_Disconnect(false) {
   // 为新客户端连接准备读事件，并添加到epoll
   m_ClientChannel = CreateScope<Channel>(m_Loop, m_ClientSocket->GetFd());
@@ -81,14 +83,12 @@ void Connection::OnMessage() {
         // 从缓冲区移除已经读取的数据
         m_InputBuffer.Erase(0, len + 4);
 
-        printf("Message(fd=%d): %s\n", GetFd(), message.c_str());
+        printf("Message(fd=%d, thread=%ld): %s\n", GetFd(), syscall(SYS_gettid), message.c_str());
 
         // 调用回调处理报文
         if (m_MessageCallback)
           m_MessageCallback(shared_from_this(), message);
       }
-      
-      m_InputBuffer.Clean();
       break;
     }
     else if (nread == 0) {
@@ -120,13 +120,31 @@ void Connection::Send(const char* data, size_t size) {
     printf("Client(fd=%d) has diconnected.\n", GetFd());
     return;
   }
+
+  std::string str(data, size);
+  if (m_Loop->IsInLoopThread()) {
+    // 如果当前线程是IO线程，直接执行发送数据的操作
+    SendInLoop(str);
+    printf("Send()在事件循环的线程中\n");
+  }
+  else {
+    // 否则将发送数据的操作交给IO线程去执行，通过EventLoop::QueueInLoop()
+    // SendInLoop(data, size);
+    m_Loop->QueueInLoop(std::bind(&Connection::SendInLoop, this, str));
+    printf("Send()不在事件循环的线程中\n");
+  }
+}
+
+void Connection::SendInLoop(std::string data) {
   // 把需要发送的数据追加到缓冲区
-  m_OutputBuffer.AppendWithHeader(data, size);
+  m_OutputBuffer.AppendWithHeader(data.data(), data.size());
   // 注册写事件
   m_ClientChannel->SetEnableWriting(true);
 }
 
 void Connection::OnWrite() {
+  printf("Connection::OnWrite() thread is %ld\n", syscall(SYS_gettid));
+
   // 发送缓冲区的数据，返回已成功发送的字节数
   int written = send(GetFd(), m_OutputBuffer.GetData(), m_OutputBuffer.GetSize(), 0);
   if (written > 0) {
