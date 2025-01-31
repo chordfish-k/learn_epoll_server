@@ -44,6 +44,8 @@ int main(int argc, const char** argv) {
 
   printf("Connect(%s:%s) OK.\n", argv[1], argv[2]);
 
+  sleep(100);
+  
   for (int i = 0; i < 3; ++i) {
     // 从命令行输入内容
     memset(buffer, 0, sizeof(buffer));
@@ -66,8 +68,6 @@ int main(int argc, const char** argv) {
     recv(clientFd, buffer, len, 0);
 
     printf("Recv: %s\n", buffer);
-
-    sleep(1);
   }
 
   return 0;

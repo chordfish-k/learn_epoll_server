@@ -34,7 +34,7 @@ void EchoServer::HandleCloseConnection(Ref<Connection> conn) {
 }
 
 void EchoServer::HandleErrorConnection(Ref<Connection> conn) {
-
+  std::cout << "EchoServer conn error.\n";
 }
 
 void EchoServer::HandleMessage(Ref<Connection> conn, std::string& message) {

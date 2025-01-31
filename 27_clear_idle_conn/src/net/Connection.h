@@ -52,4 +52,6 @@ public:
   void Send(const char* data, size_t size);
   // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传递给IO线程
   void SendInLoop(std::string data);
+
+  bool IsTimeout(time_t timeoutSecs, time_t now = time(0));   // 判断TCP连接是否超时
 };

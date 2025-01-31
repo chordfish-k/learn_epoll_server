@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Connection.h"
 #include "Pointer.h"
 #include "Epoll.h"
 
 #include <functional>
+#include <map>
 #include <mutex>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -11,6 +13,7 @@
 
 class Channel;
 class Epoll;
+class Connection;
 
 // 事件循环类
 class EventLoop
@@ -30,8 +33,22 @@ private:
   Scope<Channel> m_TimerChannel;  // 用于计时器的Channel
 
   bool m_IsMainLoop;              // 是否是主事件循环
+
+  // 移除空闲的Connection
+  // 1. 事件循环中增加map<int, Ref<Connection>> m_Conns容器，存放运行在该事件循环上全部的Connection
+  // 2. 如果定时器时间到了，遍历m_Conns，判断每个Connection对象是否超时
+  // 3. 如果超时了，从m_Conns中删除Connection
+  // 4. 还需要从TcpServer的m_Conns中删除
+  // 5. TcpServer个EventLoop的map容器需要加锁
+  // 6. 闹钟时间间隔和超时时间参数化
+  std::map<int, Ref<Connection>> m_Conns;   // fd->conn, 存放运行在该事件循环上全部的Connection
+  std::mutex m_ConnsMtx;                    // 保护m_Conns的互斥锁
+  std::function<void(int)> m_TimerCallback; // 删除TcpServer中超时的Connection对象，将被设置为TcpServer::RemoveConnection
+  int m_TimerInterval;
+  int m_TimerTimeout;
+
 public:
-  EventLoop(bool isMainLoop);  // 创建m_Ep
+  EventLoop(bool isMainLoop, int timerInterval = 30, int timerTimerout = 80);  // 创建m_Ep
   ~EventLoop(); // 析构函数，销毁m_Ep
 
   void Run();   // 在TcpServer中的线程池运行
@@ -44,5 +61,9 @@ public:
   void QueueInLoop(std::function<void()> fn); // 把任务队列添加到队列中
   void WakeUp();                              // 唤醒事件循环
   void HandleWakeUp();                        // 事件循环线程被eventFd唤醒后执行的函数
-  void HandleTimer();                         // 处理定时器到时
+  void HandleTimer();                         // 处理定时器时间到
+
+  void OnNewConnection(Ref<Connection> conn);   // 把Connection对象保存中m_Conns中
+
+  void SetTimerCallback(std::function<void(int)> fn);
 };

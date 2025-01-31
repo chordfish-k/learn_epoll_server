@@ -26,6 +26,7 @@ Connection::Connection(EventLoop* loop, Scope<Socket> clientSocket)
 }
 
 Connection::~Connection() {
+  printf("Connection(fd=%d)已析构\n", GetFd());
 }
 
 int Connection::GetFd() const {
@@ -163,4 +164,8 @@ void Connection::OnWrite() {
     if (m_SendCompleteCallback)
       m_SendCompleteCallback(shared_from_this());
   }
+}
+
+bool Connection::IsTimeout(time_t timeoutSecs, time_t now) {
+  return now - m_LastTime.toInt() > timeoutSecs;
 }

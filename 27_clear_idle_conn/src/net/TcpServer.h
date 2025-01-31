@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <map>
+#include <mutex>
 #include <vector>
 
 class TcpServer
@@ -20,8 +21,9 @@ private:
   int m_ThreadNum;                          // 线程池的大小，即从事件循环的个数
   ThreadPool m_ThreadPool;                  // 线程池
 
-  std::map<int, Ref<Connection>> m_Conns; // 一个TcpServer有多个Connection对象，存放在map容器中
-  
+  std::map<int, Ref<Connection>> m_Conns;   // fd->conn, 一个TcpServer有多个Connection对象，存放在map容器中
+  std::mutex m_ConnsMtx;                    // m_Conns会被多个从事件循环修改，需要加锁
+
   std::function<void(Ref<Connection>)> m_NewConnectionCallback;         // 回调 EchoServer 中对应函数
   std::function<void(Ref<Connection>)> m_CloseConnectionCallback;       // 回调 EchoServer 中对应函数
   std::function<void(Ref<Connection>)> m_ErrorConnectionCallback;       // 回调 EchoServer 中对应函数
@@ -47,4 +49,6 @@ public:
   void SetMessageCallback(std::function<void(Ref<Connection>, std::string&)> fn);
   void SetSendCompleteCallback(std::function<void(Ref<Connection>)> fn);
   void SetEpollTimeoutCallback(std::function<void(EventLoop*)> fn);
+
+  void RemoveConnetion(int fd);   // 删除m_Conns中的Connection对象，在EventLoop::HandleTimer中回调
 };

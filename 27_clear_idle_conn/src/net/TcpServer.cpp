@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <functional>
+#include <mutex>
 #include <unistd.h>
 
 TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum) 
@@ -19,9 +20,11 @@ TcpServer::TcpServer(const std::string& ip, const uint16_t port, int threadNum)
 
   // 创建从事件循环
   for (int i = 0; i < m_ThreadNum; i++) {
-    m_SubLoops.emplace_back(new EventLoop(false));
+    m_SubLoops.emplace_back(new EventLoop(false, 5, 10));
     // 超时回调
     m_SubLoops[i]->SetEpollTimeoutCallback(std::bind(&TcpServer::OnEpollTimeout, this, std::placeholders::_1));
+    // 清理空闲连接的计时器的回调
+    m_SubLoops[i]->SetTimerCallback(std::bind(&TcpServer::RemoveConnetion, this, std::placeholders::_1));
     // 绑定线程池要执行的任务为事件循环的Run()
     m_ThreadPool.AddTask(std::bind(&EventLoop::Run, m_SubLoops[i].get()));
   }
@@ -42,7 +45,11 @@ void TcpServer::OnNewConnection(Scope<Socket> clientSocket) {
   conn->SetMessageCallback(std::bind(&TcpServer::OnMessage, this, std::placeholders::_1, std::placeholders::_2));
   conn->SetSendCompleteCallback(std::bind(&TcpServer::OnSendComplete, this, std::placeholders::_1));
 
-  m_Conns[conn->GetFd()] = conn;
+  {
+    std::lock_guard<std::mutex> lock(m_ConnsMtx);
+    m_Conns[conn->GetFd()] = conn;  // 把conn存放到TcpServer的map容器中
+  }
+  m_SubLoops[idx]->OnNewConnection(conn); // 把conn存放到EventLoop的map容器中
 
   // 连接建立后回调EchoServer类的方法
   if (m_NewConnectionCallback)
@@ -53,18 +60,22 @@ void TcpServer::OnCloseConnection(Ref<Connection> conn) {
   // 连接关闭前回调EchoServer类的方法
   if (m_CloseConnectionCallback)
     m_CloseConnectionCallback(conn);
-
   // close(conn->GetFd()); // 在conn的析构函数->socket的析构函数中，会关闭fd
-  m_Conns.erase(conn->GetFd());
+  {
+    std::lock_guard<std::mutex> lock(m_ConnsMtx);
+    m_Conns.erase(conn->GetFd());
+  }
   // delete conn; // 使用智能指针，不用手动释放
 }
 
 void TcpServer::OnErrorConnection(Ref<Connection> conn) {
   if (m_ErrorConnectionCallback)
     m_ErrorConnectionCallback(conn);
-
   // close(conn->GetFd());
-  m_Conns.erase(conn->GetFd());
+  {
+    std::lock_guard<std::mutex> lock(m_ConnsMtx);
+    m_Conns.erase(conn->GetFd());
+  }
   // delete conn;
 }
 
@@ -107,4 +118,11 @@ void TcpServer::SetSendCompleteCallback(std::function<void(Ref<Connection>)> fn)
 
 void TcpServer::SetEpollTimeoutCallback(std::function<void(EventLoop*)> fn) {
   m_EpollTimeoutCallback = fn;
+}
+
+void TcpServer::RemoveConnetion(int fd) {
+  {
+    std::lock_guard<std::mutex> lock(m_ConnsMtx);
+    m_Conns.erase(fd);
+  }
 }
