@@ -19,6 +19,7 @@ public:
   ~EchoServer();
 
   void Start();   // 启动服务
+  void Stop();    // 停止服务
 
   void HandleNewConnection(Ref<Connection> conn);   // 处理新的连接请求，在TcpServer类中回调该函数
   void HandleCloseConnection(Ref<Connection> conn);         // 关闭客户端的连接，在TcpServer中回调该函数

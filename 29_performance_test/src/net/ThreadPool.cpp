@@ -54,14 +54,7 @@ ThreadPool::ThreadPool(size_t threadNum, const ThreadPool::Type threadType)
 
 // 析构，停止全部线程
 ThreadPool::~ThreadPool() {
-  m_Stop = true;
-
-  // 唤醒全部线程
-  m_CondVar.notify_all();
-
-  // 等待全部线程执行完成后退出
-  for (std::thread& th : m_Threads)
-    th.join();
+  Stop();
 }
 
   // 把任务添加到队列
@@ -77,4 +70,17 @@ void ThreadPool::AddTask(std::function<void()> task) {
 
 size_t ThreadPool::Size() const {
   return m_Threads.size();
+}
+
+void ThreadPool::Stop() {
+  if (m_Stop) return;
+
+  m_Stop = true;
+
+  // 唤醒全部线程
+  m_CondVar.notify_all();
+
+  // 等待全部线程执行完成后退出
+  for (std::thread& th : m_Threads)
+    th.join();
 }

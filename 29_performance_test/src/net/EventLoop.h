@@ -4,6 +4,7 @@
 #include "Pointer.h"
 #include "Epoll.h"
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -34,24 +35,20 @@ private:
 
   bool m_IsMainLoop;              // 是否是主事件循环
 
-  // 移除空闲的Connection
-  // 1. 事件循环中增加map<int, Ref<Connection>> m_Conns容器，存放运行在该事件循环上全部的Connection
-  // 2. 如果定时器时间到了，遍历m_Conns，判断每个Connection对象是否超时
-  // 3. 如果超时了，从m_Conns中删除Connection
-  // 4. 还需要从TcpServer的m_Conns中删除
-  // 5. TcpServer个EventLoop的map容器需要加锁
-  // 6. 闹钟时间间隔和超时时间参数化
   std::map<int, Ref<Connection>> m_Conns;   // fd->conn, 存放运行在该事件循环上全部的Connection
   std::mutex m_ConnsMtx;                    // 保护m_Conns的互斥锁
   std::function<void(int)> m_TimerCallback; // 删除TcpServer中超时的Connection对象，将被设置为TcpServer::RemoveConnection
   int m_TimerInterval;
   int m_TimerTimeout;
 
+  std::atomic_bool m_Stop;  // 停止事件循环的标志位
+
 public:
   EventLoop(bool isMainLoop, int timerInterval = 30, int timerTimerout = 80);  // 创建m_Ep
   ~EventLoop(); // 析构函数，销毁m_Ep
 
   void Run();   // 在TcpServer中的线程池运行
+  void Stop();  // 停止事件循环
 
   void UpdateChannel(Channel* ch);            // 把Channel添加/更新到红黑树上，channel中有fd和需要监视的事件
   void RemoveChannel(Channel* ch);            // 从epoll红黑树上删除Channel

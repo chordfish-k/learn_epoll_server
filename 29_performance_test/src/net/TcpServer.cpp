@@ -37,6 +37,20 @@ void TcpServer::Start() {
   m_MainLoop->Run();
 }
 
+void TcpServer::Stop() {
+  // 停止主事件循环
+  m_MainLoop->Stop();
+  //printf("停止主事件循环\n");
+  // 停止从事件循环
+  for (int i = 0; i < m_ThreadNum; i++) {
+    m_SubLoops[i]->Stop();
+  }
+  //printf("停止从事件循环\n");
+  // 停止IO线程
+  m_ThreadPool.Stop();
+  //printf("停止IO线程\n");
+}
+
 void TcpServer::OnNewConnection(Scope<Socket> clientSocket) {
   const int idx = clientSocket->GetFd() % m_ThreadNum; // 随机选取一个从事件循环
   Ref<Connection> conn(new Connection(m_SubLoops[idx].get(), std::move(clientSocket))); // 还没释放conn

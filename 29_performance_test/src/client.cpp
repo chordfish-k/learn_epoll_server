@@ -60,14 +60,17 @@ int main(int argc, const char** argv) {
 
     // 将命令行的输入发送给服务端
     send(clientFd, tmpBuf, len + 4, 0);
-
+  //}
+  
+  //for (int i = 0; i < 100000; ++i) {
     // 读取报文头部
+    //int len;
     recv(clientFd, &len, 4, 0);
     memset(buffer, 0, sizeof(buffer));
     // 接收服务端的回应
     recv(clientFd, buffer, len, 0);
 
-    // printf("Recv: %s\n", buffer);
+    //printf("Recv: %s\n", buffer);
   }
 
   printf("结束时间: %ld\n", time(0));

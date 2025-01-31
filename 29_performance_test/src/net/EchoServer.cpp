@@ -18,11 +18,19 @@ EchoServer::EchoServer(const std::string& ip, const uint16_t port, int subThread
 }
 
 EchoServer::~EchoServer() {
-
 }
 
 void EchoServer::Start() {
   m_TcpServer.Start();
+}
+
+void EchoServer::Stop() {
+  // 停止工作线程
+  m_ThreadPool.Stop();
+  //printf("工作线程池已停止\n");
+  // 停止IO线程
+  m_TcpServer.Stop();
+  //printf("TcpServer已停止\n");
 }
 
 void EchoServer::HandleNewConnection(Ref<Connection> conn) {

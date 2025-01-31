@@ -35,4 +35,7 @@ public:
   void AddTask(std::function<void()> task);
 
   size_t Size() const;
+
+  // 停止线程
+  void Stop();
 };

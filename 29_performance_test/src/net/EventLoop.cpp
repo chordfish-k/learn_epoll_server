@@ -33,7 +33,8 @@ EventLoop::EventLoop(bool isMainLoop, int timerInterval, int timerTimerout) :
   m_WakeUpFd(eventfd(0, EFD_NONBLOCK)), 
   m_WakeChannel(new Channel(this, m_WakeUpFd)),
   m_TimerFd(Util::CreateTimerFd(timerInterval)),
-  m_TimerChannel(new Channel(this, m_TimerFd))
+  m_TimerChannel(new Channel(this, m_TimerFd)),
+  m_Stop(false)
 {
   // 注册读事件和回调，如果WakeUpFd由数据，则会执行HandleWakeUp()
   m_WakeChannel->SetReadCallback(std::bind(&EventLoop::HandleWakeUp, this));
@@ -51,7 +52,7 @@ void EventLoop::Run() {
   //printf("EventLoop::Run() on thread %ld.\n", syscall(SYS_gettid));
   m_ThreadId = syscall(SYS_gettid); // 获取事件循环所在线程的id
   
-  while (true) {
+  while (!m_Stop) {
     // 获取有事件的Channel
     std::vector<Channel*> channels = m_Ep->Loop(10 * 1000);
 
@@ -67,6 +68,12 @@ void EventLoop::Run() {
       }
     }
   }
+}
+
+void EventLoop::Stop() {
+  m_Stop = true;
+  // 立即唤醒事件循环，让epoll返回
+  WakeUp();
 }
 
 void EventLoop::UpdateChannel(Channel* ch) {

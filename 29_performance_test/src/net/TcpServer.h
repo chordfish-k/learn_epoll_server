@@ -35,6 +35,7 @@ public:
   ~TcpServer();
 
   void Start();      // 开启事件循环
+  void Stop();       // 停止IO线程和事件循环
   
   void OnNewConnection(Scope<Socket> clientSocket);   // 处理新的连接请求，在Acceptor类中回调该函数
   void OnCloseConnection(Ref<Connection> conn);     // 关闭客户端的连接，在Connection中回调该函数
