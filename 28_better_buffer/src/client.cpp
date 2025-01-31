@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <ctime>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -44,9 +45,8 @@ int main(int argc, const char** argv) {
 
   printf("Connect(%s:%s) OK.\n", argv[1], argv[2]);
 
-  sleep(100);
-  
-  for (int i = 0; i < 3; ++i) {
+  printf("开始时间: %ld\n", time(0));
+  for (int i = 0; i < 100000; ++i) {
     // 从命令行输入内容
     memset(buffer, 0, sizeof(buffer));
     sprintf(buffer, "这是第%03d条信息。", i);
@@ -67,8 +67,10 @@ int main(int argc, const char** argv) {
     // 接收服务端的回应
     recv(clientFd, buffer, len, 0);
 
-    printf("Recv: %s\n", buffer);
+    // printf("Recv: %s\n", buffer);
   }
+
+  printf("结束时间: %ld\n", time(0));
 
   return 0;
 }

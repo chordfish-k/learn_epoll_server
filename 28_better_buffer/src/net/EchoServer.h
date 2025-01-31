@@ -20,7 +20,7 @@ public:
 
   void Start();   // 启动服务
 
-  void HandleNewConnection(Ref<Connection> clientSocket);   // 处理新的连接请求，在TcpServer类中回调该函数
+  void HandleNewConnection(Ref<Connection> conn);   // 处理新的连接请求，在TcpServer类中回调该函数
   void HandleCloseConnection(Ref<Connection> conn);         // 关闭客户端的连接，在TcpServer中回调该函数
   void HandleErrorConnection(Ref<Connection> conn);         // 客户端的连接错误，在TcpServer中回调该函数
   void HandleMessage(Ref<Connection> conn, std::string& message);  // 处理客户端的请求报文，在TcpServer类中回调该函数

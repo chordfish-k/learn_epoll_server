@@ -1,9 +1,9 @@
 #include "EchoServer.h"
 #include "ThreadPool.h"
+#include "Timestamp.h"
 
 #include <cstdio>
 #include <functional>
-#include <iostream>
 #include <unistd.h>
 #include <sys/syscall.h>
 
@@ -25,16 +25,20 @@ void EchoServer::Start() {
   m_TcpServer.Start();
 }
 
-void EchoServer::HandleNewConnection(Ref<Connection> clientSocket) {
-  std::cout << "New connection come in.\n";
+void EchoServer::HandleNewConnection(Ref<Connection> conn) {
+  //std::cout << "New connection come in.\n";
+  printf("[%s] New Connection(fd=%d,ip=%s,port=%d) ok.\n", 
+    Timestamp::now().toString().c_str(), conn->GetFd(), conn->GetIp().c_str(), conn->GetPort());
 }
 
 void EchoServer::HandleCloseConnection(Ref<Connection> conn) {
-  std::cout << "EchoServer conn close.\n";
+  // std::cout << "EchoServer conn close.\n";
+  printf("[%s] Connection Closed(fd=%d,ip=%s,port=%d) ok.\n", 
+    Timestamp::now().toString().c_str(), conn->GetFd(), conn->GetIp().c_str(), conn->GetPort());
 }
 
 void EchoServer::HandleErrorConnection(Ref<Connection> conn) {
-  std::cout << "EchoServer conn error.\n";
+  // std::cout << "EchoServer conn error.\n";
 }
 
 void EchoServer::HandleMessage(Ref<Connection> conn, std::string& message) {
@@ -49,7 +53,7 @@ void EchoServer::HandleMessage(Ref<Connection> conn, std::string& message) {
 }
 
 void EchoServer::HandleSendComplete(Ref<Connection> conn) {
-  std::cout << "Message send complete.\n";
+  // std::cout << "Message send complete.\n";
 }
 
 // void EchoServer::OnEpollTimeout(EventLoop* loop) {
@@ -57,6 +61,8 @@ void EchoServer::HandleSendComplete(Ref<Connection> conn) {
 // }
 
 void EchoServer::OnMessage(Ref<Connection> conn, std::string& message) {
+  // printf("[%s] Message(fd=%d, thread=%ld): %s\n", 
+  //  Timestamp::now().toString().c_str(), conn->GetFd(), syscall(SYS_gettid), message.c_str());
   // 假设经过若干处理，得到结果
   message = "Reply: " + message;
   conn->Send(message.data(), message.size());

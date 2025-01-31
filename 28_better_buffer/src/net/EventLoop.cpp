@@ -133,17 +133,17 @@ void EventLoop::HandleTimer() {
 
   }
   else {
-    printf("EventLoop::HandleTimer() thread is %ld. fd", syscall(SYS_gettid));
+    // printf("EventLoop::HandleTimer() thread is %ld. fd", syscall(SYS_gettid));
     time_t now = time(0);
     std::vector<int> readyToErase;
     // 统计空闲的连接
     for (auto connPair : m_Conns) {
-      printf(" %d", connPair.first);
+      // printf(" %d", connPair.first);
       if (connPair.second->IsTimeout(m_TimerTimeout, now)) {
         readyToErase.push_back(connPair.first);
       }
     }
-    printf("\n");
+    // printf("\n");
 
     // 清除空闲的连接
     for (auto fd : readyToErase) {

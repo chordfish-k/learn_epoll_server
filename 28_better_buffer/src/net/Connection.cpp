@@ -72,20 +72,13 @@ void Connection::OnMessage() {
       continue;
     }
     else if (nread == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-      // 全部的数据已经读取完毕
-      // 处理m_InputBuffer的信息
+      
+      std::string message;
       while (true) {
-        // 根据报文长度逐个分离报文
-        int len;
-        memcpy(&len, m_InputBuffer.GetData(), 4);
-        // 如果缓冲区中的长度小于报文长度，说明缓冲区中的数据不完整
-        if (m_InputBuffer.GetSize() < len + 4) break;
-        // 从缓冲区中取出第一个报文
-        std::string message(m_InputBuffer.GetData() + 4, len);
-        // 从缓冲区移除已经读取的数据
-        m_InputBuffer.Erase(0, len + 4);
+        
+        if (!m_InputBuffer.PickMessage(message)) break;
 
-        printf("Message(fd=%d, thread=%ld): %s\n", GetFd(), syscall(SYS_gettid), message.c_str());
+        // printf("Message(fd=%d, thread=%ld): %s\n", GetFd(), syscall(SYS_gettid), message.c_str());
 
         // 更新时间戳
         m_LastTime = Timestamp::now();
@@ -131,25 +124,25 @@ void Connection::Send(const char* data, size_t size) {
   if (m_Loop->IsInLoopThread()) {
     // 如果当前线程是IO线程，直接执行发送数据的操作
     SendInLoop(str);
-    printf("Send()在事件循环的线程中\n");
+    // printf("Send()在事件循环的线程中\n");
   }
   else {
     // 否则将发送数据的操作交给IO线程去执行，通过EventLoop::QueueInLoop()
     // SendInLoop(data, size);
     m_Loop->QueueInLoop(std::bind(&Connection::SendInLoop, this, str));
-    printf("Send()不在事件循环的线程中\n");
+    // printf("Send()不在事件循环的线程中\n");
   }
 }
 
 void Connection::SendInLoop(std::string data) {
   // 把需要发送的数据追加到缓冲区
-  m_OutputBuffer.AppendWithHeader(data.data(), data.size());
+  m_OutputBuffer.AppendWithSeparator(data.data(), data.size());
   // 注册写事件
   m_ClientChannel->SetEnableWriting(true);
 }
 
 void Connection::OnWrite() {
-  printf("Connection::OnWrite() thread is %ld\n", syscall(SYS_gettid));
+  // printf("Connection::OnWrite() thread is %ld\n", syscall(SYS_gettid));
 
   // 发送缓冲区的数据，返回已成功发送的字节数
   int written = send(GetFd(), m_OutputBuffer.GetData(), m_OutputBuffer.GetSize(), 0);
