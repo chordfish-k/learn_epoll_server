@@ -1,3 +1,4 @@
+#include "http/HttpRequest.h"
 #include "util/Str.h"
 
 #include <iostream>
@@ -49,24 +50,40 @@ void TestStr2() {
   std::cout << s1.Data() << std::endl; // 输出 "你好界！"
 }
 
-void TestStr3() {
-  Str request = R"(GET / HTTP/1.1
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
-Accept-Encoding: gzip, deflate, br, zstd
-Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7
-Cache-Control: no-cache
-Connection: keep-alive)";
+void TestRequestParse() {
+  Str requestMsg = R"(
+    GET / HTTP/1.1
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+    Accept-Encoding: gzip, deflate, br, zstd
+    Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7
+    Cache-Control: no-cache
+    Connection: keep-alive
 
-  for (auto ch : request.Split("\n")) {
-    std::cout  << "> " << ch.Data() << "\n";
+    abc
+)";
+
+  std::cout << "[Request Line]\n";
+  HttpRequset request(requestMsg);
+  std::cout << "Method: " << Utils::Method2String(request.GetMethod())
+            << std::endl;
+  std::cout << "Path: " << request.GetPath() << std::endl;
+  std::cout << "Version: " << Utils::Version2String(request.GetVersion())
+            << std::endl;
+
+  std::cout << "\n[Headers]\n";
+  for (auto &[k, v] : request.GetHeaders()) {
+    std::cout << k << ": " << v << std::endl;
   }
+
+  std::cout << "\n[Body]\n";
+  std::cout << request.GetBody() << std::endl;
 }
 
 int main() {
 
-  TestStr1();
-  TestStr2();
-  TestStr3();
+  // TestStr1();
+  // TestStr2();
+  TestRequestParse();
 
   return 0;
 }

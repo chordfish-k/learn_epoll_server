@@ -1,6 +1,7 @@
 #include "Str.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 // 构造函数：从字符初始化
 Str::Str(char ch) : m_CharWidth(CharWidth::ASCII) {
@@ -85,8 +86,7 @@ std::vector<Str> Str::Chars() const {
     for (int i = 0; i < m_Length; ++i) {
       result.emplace_back(m_Data[i]);
     }
-  }
-  else if (m_CharWidth == CharWidth::UTF8) {
+  } else if (m_CharWidth == CharWidth::UTF8) {
     size_t pos = 0;
     while (pos < m_Data.size()) {
       const unsigned char c = m_Data[pos];
@@ -160,6 +160,26 @@ void Str::Erase(size_t pos, size_t len) {
 
   m_Data.erase(start, end - start);
   m_Length = CalculateLength(); // 重新计算字符长度
+}
+
+// 删除头尾空白字符
+Str &Str::Trim() {
+  size_t start = 0;
+  size_t end = m_Data.size();
+
+  while (start < m_Data.size() &&
+         std::isspace(static_cast<unsigned char>(m_Data[start]))) {
+    ++start;
+  }
+  while (end > 0 && std::isspace(static_cast<unsigned char>(m_Data[end - 1]))) {
+    --end;
+  }
+
+  if (start > 0) {
+    m_Data = m_Data.substr(start, end - start + 1);
+    m_Length = CalculateLength(); // 重新计算字符长度
+  }
+  return *this;
 }
 
 // 判断是否为空白字符串

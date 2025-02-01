@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -42,6 +41,7 @@ public:
   void Append(const Str &str);
   void Insert(size_t pos, const Str &str);
   void Erase(size_t pos, size_t len = NPOS);
+  Str& Trim();
 
   // 运算符重载
   bool operator==(const Str &other) const;
