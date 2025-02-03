@@ -1,5 +1,6 @@
 #pragma once
 
+#include "http/HttpRouter.h"
 #include "net/Connection.h"
 #include "net/EventLoop.h"
 #include "net/TcpServer.h"
@@ -12,6 +13,7 @@ class HttpServer {
 private:
   TcpServer m_TcpServer;
   ThreadPool m_ThreadPool;
+  HttpRouter m_Router;
 
 public:
   // sub线程：负责从事件循环io的线程；work线程：业务逻辑的工作线程
@@ -35,4 +37,6 @@ public:
   void OnEpollTimeout(EventLoop *loop);
   // 处理客户端的请求报文，用于添加给线程池
   void OnMessage(Ref<Connection> conn, std::string &message);
+
+  HttpRouter& GetRouter();
 };

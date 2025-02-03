@@ -15,12 +15,15 @@ HttpRequset::HttpRequset(const Str &request) {
 
     if (processStatus == 0 && line.Contains("HTTP")) {
       std::vector<Str> element = line.Trim().Split(" ");
-      if (element.size() >= 1)
+      if (element.size() >= 1) {
         p_Method = HttpUtils::String2Method(element[0]);
-      if (element.size() >= 2)
+      }
+      if (element.size() >= 2) {
         p_Path = element[1];
-      if (element.size() >= 3)
+      }
+      if (element.size() >= 3) {
         p_Version = HttpUtils::String2Version(element[2]);
+      }
 
       processStatus = 1;
 

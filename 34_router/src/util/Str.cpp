@@ -1,6 +1,8 @@
 #include "Str.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdio>
 #include <stdexcept>
 
 // 构造函数：从字符初始化
@@ -133,7 +135,9 @@ Str Str::SubStr(size_t pos, size_t len) const {
 }
 
 // 获取单个字符
-Str Str::At(size_t index) const { return SubStr(index, 1); }
+Str Str::At(size_t index) const { 
+  return SubStr(index, 1); 
+}
 
 // 追加字符串
 void Str::Append(const Str &str) {

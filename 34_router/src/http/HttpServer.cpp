@@ -1,8 +1,7 @@
 #include "HttpServer.h"
 
-#include "http/HttpElement.h"
 #include "http/HttpRequest.h"
-#include "http/HttpResponse.h"
+#include "http/HttpRouter.h"
 #include "net/ThreadPool.h"
 
 #include <cstdio>
@@ -70,28 +69,7 @@ void HttpServer::OnMessage(Ref<Connection> conn, std::string &message) {
   // std::cout << message << std::endl;
   HttpRequset request(message);
 
-  // 路由
-  std::string body;
-  Status status = Status::OK;
-  Header header;
-  header["Content-Type"] = "text/html";
-
-  if (request.p_Method == Method::GET) {
-    if (request.p_Path == "/") {
-      body = "<h1>Index</h1>";
-    } else if (request.p_Path == "/test") {
-      body = "<h1>Test</h1>";
-    } else if (request.p_Path == "/json") {
-      body = "{\"data\":\"Some Text Here\"}";
-      header["Content-Type"] = "text/json";
-    } else {
-      body = "<h1>NotFound</h1>";
-      status = Status::NOT_FOUND;
-    }
-    HttpResponse response(status, header, body);
-    response.Send(conn);
-  } else {
-    HttpResponse response(Status::NOT_FOUND, header);
-    response.Send(conn);
-  }
+  m_Router.Route(conn, request);
 }
+
+HttpRouter &HttpServer::GetRouter() { return m_Router; }
